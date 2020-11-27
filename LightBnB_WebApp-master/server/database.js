@@ -21,14 +21,14 @@ const getUserWithEmail = function(email) {
   SELECT * FROM users
   WHERE email = $1;
   `, [email])
-  .then((res) => {
-    if (!res.rows[0]) {
-      return null;
-    } 
-    return res.rows[0];
-  })
-  .catch(err => err)
-}
+    .then((res) => {
+      if (!res.rows[0]) {
+        return null;
+      }
+      return res.rows[0];
+    })
+    .catch(err => err);
+};
 exports.getUserWithEmail = getUserWithEmail;
 
 /**
@@ -41,14 +41,14 @@ const getUserWithId = function(id) {
   SELECT * FROM users
   WHERE id = $1;
   `, [id])
-  .then((res) => {
-    if (!res.rows[0]) {
-      return null;
-    } 
-    return res.rows[0];
-  })
-  .catch(err => err)
-}
+    .then((res) => {
+      if (!res.rows[0]) {
+        return null;
+      }
+      return res.rows[0];
+    })
+    .catch(err => err);
+};
 exports.getUserWithId = getUserWithId;
 
 /**
@@ -61,9 +61,9 @@ const addUser =  function(user) {
   INSERT INTO users (name, email, password)
   VALUES ($1, $2, $3) RETURNING *;
   `, [user.name, user.email, user.password])
-  .then(res => res.row[0])
-  .catch(err => err)
-}
+    .then(res => res.row[0])
+    .catch(err => err);
+};
 exports.addUser = addUser;
 
 /// Reservations
@@ -73,7 +73,7 @@ exports.addUser = addUser;
  * @param {string} guest_id The id of the user.
  * @return {Promise<[{}]>} A promise to the reservations.
  */
-const getAllReservations = function(guest_id, limit = 10) {
+const getAllReservations = function(guestId, limit = 10) {
   return pool.query(`
   SELECT properties.*, reservations.*, avg(rating) as average_rating
   FROM reservations
@@ -84,10 +84,10 @@ const getAllReservations = function(guest_id, limit = 10) {
   GROUP BY properties.id, reservations.id
   ORDER BY reservations.start_date
   LIMIT $2;
-  `, [guest_id, limit])
-  .then(res => res.rows)
-  .catch(err => err)
-}
+  `, [guestId, limit])
+    .then(res => res.rows)
+    .catch(err => err);
+};
 exports.getAllReservations = getAllReservations;
 
 /// Properties
@@ -132,7 +132,7 @@ const getAllProperties = function(options, limit = 10) {
   if (!options.minimum_price_per_night && options.maximum_price_per_night) {
     queryParams.push(`${options.maximum_price_per_night}`);
     queryString += `AND properties.cost_per_night <= $${queryParams.length} `;
-  } 
+  }
 
   if (options.minimum_rating) {
     queryParams.push(`${options.minimum_rating}`);
@@ -154,10 +154,10 @@ const getAllProperties = function(options, limit = 10) {
     LIMIT $${queryParams.length};
     `;
   }
-  
+
   return pool.query(queryString, queryParams)
-  .then(res => res.rows);
-}
+    .then(res => res.rows);
+};
 
 exports.getAllProperties = getAllProperties;
 
@@ -168,9 +168,42 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function(property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
-  return Promise.resolve(property);
-}
+  return pool.query(`
+  INSERT INTO properties (
+    owner_id,
+    title,
+    description,
+    thumbnail_photo_url,
+    cover_photo_url,
+    cost_per_night,
+    street,
+    city,
+    province,
+    post_code,
+    country,
+    parking_spaces,
+    number_of_bathrooms,
+    number_of_bedrooms
+  )
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
+  `,
+  [
+    property.owner_id,
+    property.title,
+    property.description,
+    property.thumbnail_photo_url,
+    property.cover_photo_url,
+    property.cost_per_night,
+    property.street,
+    property.city,
+    property.province,
+    property.post_code,
+    property.country,
+    property.parking_spaces,
+    property.number_of_bathrooms,
+    property.number_of_bedrooms
+  ])
+    .then(res => res.rows[0])
+    .catch(err => err);
+};
 exports.addProperty = addProperty;
